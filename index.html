@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Super</title>
+  <meta name="description" content="Anota lo que echas al carro en el supermercado y ve el total al instante.">
+  <meta name="theme-color" content="#f3f6f1" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0e1913" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Super">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="preload" href="/fonts/barlow-condensed-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/barlow-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="top__title">
+      <h1>Compra del super</h1>
+      <p class="top__date" id="fecha"></p>
+    </div>
+    <button class="icon-btn" id="btn-menu" type="button" aria-label="Opciones" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+    </button>
+  </header>
+
+  <main class="wrap">
+    <form class="composer" id="composer" novalidate autocomplete="off">
+      <div class="field">
+        <label for="f-nombre">Producto</label>
+        <input id="f-nombre" name="nombre" type="text" list="catalogo" placeholder="Ej: leche entera 1 L" enterkeyhint="next" autocapitalize="sentences" maxlength="60">
+        <datalist id="catalogo"></datalist>
+      </div>
+
+      <div class="composer__row">
+        <div class="field field--qty">
+          <div class="field__head">
+            <label for="f-cant">Cantidad</label>
+            <div class="unit" role="group" aria-label="Unidad de medida">
+              <button type="button" class="unit__opt" data-unit="un" aria-pressed="true">un</button>
+              <button type="button" class="unit__opt" data-unit="kg" aria-pressed="false">kg</button>
+            </div>
+          </div>
+          <div class="stepper">
+            <button type="button" class="stepper__btn" id="btn-menos" aria-label="Restar uno">−</button>
+            <input id="f-cant" name="cantidad" type="text" inputmode="decimal" value="1" aria-describedby="err-cant">
+            <button type="button" class="stepper__btn" id="btn-mas" aria-label="Sumar uno">+</button>
+          </div>
+        </div>
+
+        <div class="field field--price">
+          <div class="field__head"><label for="f-precio" id="lbl-precio">Precio unitario</label></div>
+          <div class="money">
+            <span class="money__sign" aria-hidden="true">$</span>
+            <input id="f-precio" name="precio" type="text" inputmode="numeric" placeholder="0" aria-describedby="err-precio" enterkeyhint="done">
+          </div>
+        </div>
+      </div>
+
+      <p class="field__error" id="err-precio" role="alert" hidden></p>
+      <p class="field__error" id="err-cant" role="alert" hidden></p>
+
+      <div class="composer__foot">
+        <div class="composer__sub">
+          <span class="composer__sub-label">Total línea</span>
+          <output id="preview" for="f-cant f-precio">$0</output>
+        </div>
+        <button type="submit" class="btn btn--primary" id="btn-guardar">Agregar al carro</button>
+      </div>
+
+      <div class="composer__edit" id="edit-actions" hidden>
+        <button type="button" class="btn btn--ghost" id="btn-cancelar">Cancelar</button>
+        <button type="button" class="btn btn--danger" id="btn-eliminar">Eliminar producto</button>
+      </div>
+    </form>
+
+    <section class="cart" aria-labelledby="cart-title">
+      <h2 class="cart__title" id="cart-title">En el carro</h2>
+      <ol class="cart__list" id="lista"></ol>
+      <div class="empty" id="vacio">
+        <p class="empty__lead">Tu carro está vacío.</p>
+        <p>Anota cada producto que eches al carro con su precio y cantidad. El total se va sumando abajo.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="dock">
+    <div class="tag" id="tag">
+      <span class="tag__hole" aria-hidden="true"></span>
+      <div class="tag__meta">
+        <span class="tag__label">Total a pagar</span>
+        <span class="tag__count" id="conteo">0 artículos</span>
+      </div>
+      <output class="tag__total" id="total" aria-live="polite">$0</output>
+    </div>
+    <p class="budget" id="presupuesto-info" hidden></p>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+    <span id="toast-msg"></span>
+    <button type="button" id="toast-undo">Deshacer</button>
+  </div>
+
+  <dialog class="sheet" id="dlg-menu" aria-labelledby="menu-title">
+    <form method="dialog" class="sheet__body">
+      <h2 class="sheet__title" id="menu-title">Opciones</h2>
+      <button class="sheet__item" value="presupuesto">
+        <strong>Presupuesto</strong>
+        <span>Fija cuánto quieres gastar y ve cuánto te queda</span>
+      </button>
+      <button class="sheet__item" value="compartir">
+        <strong>Compartir lista</strong>
+        <span>Envía los productos y el total por WhatsApp u otra app</span>
+      </button>
+      <button class="sheet__item sheet__item--danger" value="nueva">
+        <strong>Nueva compra</strong>
+        <span>Vacía el carro para empezar de cero</span>
+      </button>
+      <button class="btn btn--ghost sheet__close" value="cerrar">Cerrar</button>
+    </form>
+  </dialog>
+
+  <dialog class="sheet" id="dlg-presupuesto" aria-labelledby="pres-title">
+    <form method="dialog" class="sheet__body" id="form-presupuesto">
+      <h2 class="sheet__title" id="pres-title">¿Cuánto quieres gastar?</h2>
+      <div class="money money--big">
+        <span class="money__sign" aria-hidden="true">$</span>
+        <input id="f-presupuesto" type="text" inputmode="numeric" placeholder="50.000" aria-labelledby="pres-title">
+      </div>
+      <div class="sheet__actions">
+        <button class="btn btn--ghost" value="quitar" id="btn-quitar-pres">Quitar presupuesto</button>
+        <button class="btn btn--primary" value="guardar">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="sheet" id="dlg-nueva" aria-labelledby="nueva-title">
+    <form method="dialog" class="sheet__body">
+      <h2 class="sheet__title" id="nueva-title">¿Empezar una compra nueva?</h2>
+      <p class="sheet__text" id="nueva-texto"></p>
+      <div class="sheet__actions">
+        <button class="btn btn--ghost" value="cancelar">Cancelar</button>
+        <button class="btn btn--danger" value="confirmar">Vaciar carro</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>
